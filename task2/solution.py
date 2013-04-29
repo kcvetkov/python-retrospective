@@ -1,9 +1,40 @@
+from collections import OrderedDict
+
+
 def groupby(func, seq):
-    result_dictionary = {}
-    for i in seq:
-        key = func(i)
-        if key in result_dictionary:
-            result_dictionary[key].append(i)
+    groups = {}
+    for x in seq:
+        groups.setdefault(func(x), []).append(x)
+    return groups
+
+
+def compose(outer, inner):
+    return lambda x: outer(inner(x))
+
+
+def iterate(func):
+    result = lambda x: x
+
+    while True:
+        yield result
+        result = compose(func, result)
+
+
+def zip_with(func, *iterables):
+    return [func(*args) for args in zip(*iterables)]
+
+
+def cache(func, cache_size):
+    cached_calls = OrderedDict()
+
+    def func_cached(*args):
+        if args in cached_calls:
+            return cached_calls[args]
         else:
-            result_dictionary[key] = [i]
-    return result_dictionary
+            value = func(*args)
+            if cache_size > 0:
+                if len(cached_calls) == cache_size:
+                    cached_calls.popitem(last=False)
+                cached_calls[args] = value
+            return value
+    return func_cached
